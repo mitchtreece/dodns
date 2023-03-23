@@ -26,9 +26,6 @@ args = parser.parse_args()
 
 records_url = f'https://api.digitalocean.com/v2/domains/{DOMAIN}/records/'
 session = requests.Session()
-session.headers = {
-    'Authorization': 'Bearer ' + TOKEN
-}
 
 # Functions
 
@@ -98,6 +95,12 @@ def main():
     print(fg.yellow + "DO_TOKEN: " + fg.blue + TOKEN + fg.rs)
     print(fg.yellow + "================================" + fg.rs)
     print()
+
+    # Request session headers
+
+    session.headers = {
+        "Authorization": "Bearer " + TOKEN
+    }
 
     # Get wan ip address
 
