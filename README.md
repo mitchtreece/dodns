@@ -1,5 +1,12 @@
 # Digitalocean DNS
 
+# TODO
+
+- Remove hardcoded info from script (token, domain, etc)
+- Make GitHub repo public
+
+# Content
+
 Pick one of the options below using the following settings:
 
 * **DO_API_TOKEN:** The token you generate in DigitalOcean's API settings.
