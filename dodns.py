@@ -128,7 +128,9 @@ def main():
 
     if not all_records:
 
-        print(fg.blue + " ... " + fg.yellow + "no records found, exiting")
+        print(fg.blue + " ... " + fg.yellow + "no records found")
+        print(fg.blue + " ↳ " + fg.yellow + "Make sure your domain & api token are valid")
+        print(fg.blue + " ↳ " + fg.yellow + "exiting")
         exit()
     
     else:
