@@ -3,6 +3,7 @@
 # TODO
 
 - Remove hardcoded info from script (token, domain, etc)
+- Need to remove the above stuff retroactively on dev & main branches. Rewwrite history? just make a new repo?
 - Make GitHub repo public
 
 # Content
