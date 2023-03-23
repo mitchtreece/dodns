@@ -13,10 +13,10 @@ dotenv.load_dotenv()
 
 # TODO: Remove hard coded fallback values
 
-VERSION = os.getenv("DODNS_VERSION")
-DOMAIN = os.getenv("DO_DOMAIN", "mitchflix.io")
-SUBDOMAINS = os.getenv("DO_SUBDOMAINS", "www")
-TOKEN = os.getenv("DO_API_TOKEN", "dop_v1_79a9c0d5ce2b78311c591d958b7970b769545ef8f8f456f95a79dbad8c219295")
+VERSION = "1.0.0"
+DOMAIN = os.getenv("DO_DOMAIN")
+SUBDOMAINS = os.getenv("DO_SUBDOMAINS")
+TOKEN = os.getenv("DO_API_TOKEN")
 
 # Arguments
 
