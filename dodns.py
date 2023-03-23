@@ -63,7 +63,11 @@ def get_wan_ip():
 def get_subdomain_records():
 
     json = session.get(records_url).json()
-    return json["domain_records"]
+
+    if "domain_records" in json:
+        return json["domain_records"]
+    else:
+        return []
 
 
 def find_subdomain_record_in_list(name, list):
@@ -115,12 +119,20 @@ def main():
 
     print(fg.blue + " ... " + fg.green + ip + fg.rs)
 
-    # Subdomains
+    # Subdomain records
 
-    print(fg.blue + "📚 Fecthing records for " + fg.green + DOMAIN + fg.rs)
+    print(fg.blue + "📚 Fecthing records for " + fg.green + DOMAIN + fg.rs, end="")
 
     all_records = get_subdomain_records()
     valid_records = []
+
+    if not all_records:
+
+        print(fg.blue + " ... " + fg.yellow + "no records found, exiting")
+        exit()
+    
+    else:
+        print()
 
     for record in all_records:
 
@@ -132,6 +144,11 @@ def main():
         else:
 
             print(fg.yellow + " ↳ " + record["name"] + " → " + record["data"] + " (" + record["type"] + ")" + fg.rs)
+
+    if not valid_records:
+
+        print(fg.yellow + "🏃🏻‍♂️ No valid records found, exiting")
+        exit()
 
     sanitized_subdomains = SUBDOMAINS.replace(" ", "")
     subdomain_list = sanitized_subdomains.split(',') 
