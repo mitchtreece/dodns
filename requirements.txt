@@ -1,0 +1,3 @@
+python-dotenv==1.*
+requests==2.*
+sty==1.*
