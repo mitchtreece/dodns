@@ -1,35 +1,36 @@
-# Digitalocean DNS
+# DODNS - DigitalOcean Dynamic DNS
 
-# TODO
+DigitalOcean DNS update script. Written in Python, bundled with Docker 😎
 
-- Remove hardcoded info from script (token, domain, etc)
-- Need to remove the above stuff retroactively on dev & main branches. Rewwrite history? just make a new repo?
-- Make GitHub repo public
-
-# Content
-
-Pick one of the options below using the following settings:
-
-* **DO_API_TOKEN:** The token you generate in DigitalOcean's API settings.
-* **DO_DOMAIN:** The domain your subdomain is registered at. (i.e. `foo.com` for `home.foo.com`)
-* **DO_SUBDOMAINS:** Subdomain to use. (name in A record) (i.e. `home` for `home.foo.com`). Multiple subdomains must be separated by commas `,`
-
-* **SLEEP_INTERVAL:** Polling time in seconds. (default: 300)
-* **REMOVE_DUPLICATES:** If set to `"true"`, removes extra DNS records if more than one A record is found on a subdomain. *Note that if this is not enabled, the script will NOT update subdomains with more than one A record* (default: false)
+## Usage
 
 ### Docker
 
 ```
-$ docker pull mitchtreece/dodns
+$ docker pull ghcr.io/mitchtreece/dodns
 $ docker run -d --name dodns \
     -e DO_API_TOKEN="your_api_token" \
     -e DO_DOMAIN="yourdomain.com" \
-    -e SUBDOMAINS="your,subdomain,list" \
-    -e SLEEP_INTERVAL=2 \
-    -e REMOVE_DUPLICATES="true" \
+    -e DO_SUBDOMAINS="your,subdomain,list" \
     mitchtreece/dodns
 ```
 
 ### Docker Compose
 
-TODO
+```
+dodns:
+    container_name: dodns-yourdomain.com
+    image: ghcr.io/mitchtreece/dodns
+    environment:
+        - DO_API_TOKEN="your_api_token"
+        - DO_DOMAIN="yourdomain.com"
+        - DO_SUBDOMAINS="your,subdomain,list"
+```
+
+## Variables
+
+- **DODNS_SCHEDULE (optional)**: The cron schedule you'd like the script to run on. Defaults to "`*/5 * * * *`" (every 5 minutes) if not specified.
+- **DODNS_DRY_RUN (optional)**: (_0 || 1_) - Flag indicating if the script should be run "dry", i.e. no actual update actions will be performed.
+- **DO_API_TOKEN**: Your DigitalOcean API token.
+- **DO_DOMAIN**: The DigitalOcean domain you'd like to update.
+- **DO_SUBDOMAINS (optional)**: Comma-separated list of subdomains you'd like updated. Defaults to "`@`" if none are specified.

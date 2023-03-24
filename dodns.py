@@ -12,6 +12,7 @@ from sty import fg, bg, ef, rs
 dotenv.load_dotenv()
 
 VERSION = "1.0.0"
+DRY_RUN = os.getenv("DODNS_DRY_RUN", 0)
 DOMAIN = os.getenv("DO_DOMAIN")
 SUBDOMAINS = os.getenv("DO_SUBDOMAINS", "@")
 TOKEN = os.getenv("DO_API_TOKEN")
@@ -26,6 +27,10 @@ args = parser.parse_args()
 
 records_url = f'https://api.digitalocean.com/v2/domains/{DOMAIN}/records/'
 session = requests.Session()
+
+# Dry run
+
+is_dry_run = (args.dry or int(DRY_RUN) > 0)
 
 # Functions
 
@@ -79,7 +84,6 @@ def find_subdomain_record_in_list(name, list):
 
 def main():
 
-    print()
     print(fg.red    + "______ ___________ _   _  _____ " + fg.rs)
     print(fg.red    + "|  _  \  _  |  _  \ \ | |/  ___|" + fg.rs)
     print(fg.red    + "| | | | | | | | | |  \| |\ `--. " + fg.rs)
@@ -94,11 +98,14 @@ def main():
 
     precondition_vars()
 
-    print(fg.yellow + "DO_DOMAIN: " + fg.blue + DOMAIN + fg.rs)
-    print(fg.yellow + "DO_SUBDOMAINS: " + fg.blue + SUBDOMAINS + fg.rs)
-    print(fg.yellow + "DO_TOKEN: " + fg.blue + TOKEN + fg.rs)
+    print(fg.yellow + "Domain: " + fg.blue + DOMAIN + fg.rs)
+    print(fg.yellow + "Subdomains: " + fg.blue + SUBDOMAINS + fg.rs)
+    print(fg.yellow + "Token: " + fg.blue + TOKEN + fg.rs)
     print(fg.yellow + "================================" + fg.rs)
     print()
+
+    if is_dry_run:
+        print(fg.yellow + "🌵 Running dry" + fg.rs)
 
     # Request session headers
 
@@ -189,7 +196,11 @@ def main():
 
             print(fg.blue + " ... " + fg.yellow + record_ip + fg.blue + " → " + fg.green + ip + fg.rs, end="")
 
-            if not args.dry:
+            if is_dry_run:
+
+                print(fg.blue + " ... " + fg.yellow + "dry run, skipping" + fg.rs)
+                
+            else:
 
                 res = session.put(records_url + record_id, json={"data": ip})
 
@@ -198,10 +209,8 @@ def main():
                 else:
                     print(fg.blue + " ... " + fg.red + "failed, " + res.text + fg.rs)
 
-            else:
-                print(fg.blue + " ... " + fg.yellow + "dry run, skipping" + fg.rs)
-
         else:
+
             print(fg.blue + " ... " + fg.yellow + "already up to date, skipping" + fg.rs)
 
     print(fg.blue + "✅ Done" + fg.rs)
