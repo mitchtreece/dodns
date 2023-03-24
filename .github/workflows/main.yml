@@ -2,7 +2,10 @@ name: Build & Publish
 
 on:
   push:
-    branches: [main]
+    branches:
+      - 'main'
+    tags:
+      - 'v*'
   pull_request: # run on pull-request
 
 env:
@@ -41,13 +44,23 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
 
-      - name: Build & Publish
+      - name: Build & Publish (Versioned)
         uses: docker/build-push-action@v4
+        if: ${{ github.ref != 'refs/heads/main' }}
         with:
           context: .
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          push: ${{ github.ref == 'refs/heads/main' }} # build on feature branches, push only on main branch
+          push: true
+
+      - name: Build & Publish (Latest)
+        uses: docker/build-push-action@v4
+        if: ${{ github.ref == 'refs/heads/main' }}
+        with:
+          context: .
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+          labels: ${{ steps.meta.outputs.labels }}
+          push: true
 
       - name: Image Digest
         run: echo ${{ steps.docker_build.outputs.digest }}
