@@ -7,56 +7,56 @@ import requests
 from argparse import ArgumentParser
 from sty import fg, bg, ef, rs
 
-# Environment variables
+# Variables
 
 dotenv.load_dotenv()
 
-# TODO: Remove hard coded fallback values
-
-VERSION = os.getenv("DODNS_VERSION")
-DOMAIN = os.getenv("DO_DOMAIN", "mitchflix.io")
-SUBDOMAINS = os.getenv("DO_SUBDOMAINS", "www")
-TOKEN = os.getenv("DO_API_TOKEN", "dop_v1_79a9c0d5ce2b78311c591d958b7970b769545ef8f8f456f95a79dbad8c219295")
+VERSION = "1.0.0"
+DRY_RUN = os.getenv("DODNS_DRY_RUN", 0)
+DOMAIN = os.getenv("DO_DOMAIN")
+SUBDOMAINS = os.getenv("DO_SUBDOMAINS", "@")
+TOKEN = os.getenv("DO_API_TOKEN")
 
 # Arguments
 
 parser = ArgumentParser()
-parser.add_argument("-d", "--dry", action="store_true")
+parser.add_argument("-d", "--dry", help="run without performing any update actions", action="store_true")
 args = parser.parse_args()
 
 # Request session
 
 records_url = f'https://api.digitalocean.com/v2/domains/{DOMAIN}/records/'
 session = requests.Session()
-session.headers = {
-    'Authorization': 'Bearer ' + TOKEN
-}
+
+# Dry run
+
+is_dry_run = (args.dry or int(DRY_RUN) > 0)
 
 # Functions
 
-def precondition_env_vars():
+def precondition_vars():
 
     if not DOMAIN:
 
         print()
-        print(fg.red + "🚫 Missing variable \"DO_DOMAIN\", exiting..." + fg.rs)
+        print(fg.red + "🚫 Missing variable \"DO_DOMAIN\", exiting" + fg.rs)
         print()
         exit()
 
     if not SUBDOMAINS:
 
-        # Is it okay that subdomains is empty, how do I update the
-        # raw domain, i.e. "mitchtreece.io"
+        # This should never happen, the DO_SUBDOMAINS variable
+        # falls back to "@" by default if nothing is specified
 
         print()
-        print(fg.red + "🚫 Missing variable \"DO_SUBDOMAINS\", exiting..." + fg.rs)
+        print(fg.red + "🚫 Missing variable \"DO_SUBDOMAINS\", exiting" + fg.rs)
         print()
         exit()
 
     if not TOKEN:
 
         print()
-        print(fg.red + "🚫 Missing variable \"DO_API_TOKEN\", exiting..." + fg.rs)
+        print(fg.red + "🚫 Missing variable \"DO_API_TOKEN\", exiting" + fg.rs)
         print()
         exit()
 
@@ -65,41 +65,25 @@ def get_wan_ip():
     return requests.get('https://api.ipify.org').text.rstrip()
 
 
-# def get_subdomain_info():
+def get_subdomain_records():
 
-#     records = session.get(records_url).json()
+    json = session.get(records_url).json()
 
-#     for record in records['domain_records']:
-#         if record['name'] == subdomain:
-#             return record
+    if "domain_records" in json:
+        return json["domain_records"]
+    else:
+        return []
 
 
-def get_subdomain_record(name):
+def find_subdomain_record_in_list(name, list):
 
-    records = session.get(records_url).json()
-
-    for record in records['domain_records']:
-        if record['name'] == name:
+    for record in list:
+        if record["name"] == name:
             return record
 
 
-# def update_dns():
-#     current_ip_address = get_ip()
-#     sub_info = get_sub_info()
-#     subdomain_ip_address = sub_info['data']
-#     subdomain_record_id = sub_info['id']
-#     if current_ip_address == subdomain_ip_address:
-#         print('Subdomain DNS record does not need updating.')
-#     else:
-#         response = session.put(records_url + subdomain_record_id, json={'data': current_ip_address})
-#         if response.ok:
-#             print('Subdomain IP address updated to ' + current_ip_address)
-#         else:
-#             print('IP address update failed with message: ' + response.text)
-
 def main():
 
-    print()
     print(fg.red    + "______ ___________ _   _  _____ " + fg.rs)
     print(fg.red    + "|  _  \  _  |  _  \ \ | |/  ___|" + fg.rs)
     print(fg.red    + "| | | | | | | | | |  \| |\ `--. " + fg.rs)
@@ -112,13 +96,22 @@ def main():
     print(fg.green  + "Mitch Treece <@mitchtreece>" + fg.rs)
     print(fg.yellow + "================================" + fg.rs)
 
-    precondition_env_vars()
+    precondition_vars()
 
-    print(fg.yellow + "DO_DOMAIN: " + fg.blue + DOMAIN + fg.rs)
-    print(fg.yellow + "DO_SUBDOMAINS: " + fg.blue + SUBDOMAINS + fg.rs)
-    print(fg.yellow + "DO_TOKEN: " + fg.blue + TOKEN + fg.rs)
+    print(fg.yellow + "Domain: " + fg.blue + DOMAIN + fg.rs)
+    print(fg.yellow + "Subdomains: " + fg.blue + SUBDOMAINS + fg.rs)
+    print(fg.yellow + "Token: " + fg.blue + TOKEN + fg.rs)
     print(fg.yellow + "================================" + fg.rs)
     print()
+
+    if is_dry_run:
+        print(fg.yellow + "🌵 Running dry" + fg.rs)
+
+    # Request session headers
+
+    session.headers = {
+        "Authorization": "Bearer " + TOKEN
+    }
 
     # Get wan ip address
 
@@ -127,12 +120,44 @@ def main():
     ip = get_wan_ip()
 
     if not ip:
+
         print(fg.blue + " ... " + fg.red + "failed" + fg.rs)
         exit()
 
     print(fg.blue + " ... " + fg.green + ip + fg.rs)
 
-    # Get subdomain name list
+    # Subdomain records
+
+    print(fg.blue + "📚 Fecthing records for " + fg.green + DOMAIN + fg.rs, end="")
+
+    all_records = get_subdomain_records()
+    valid_records = []
+
+    if not all_records:
+
+        print(fg.blue + " ... " + fg.yellow + "no records found")
+        print(fg.blue + " ↳ " + fg.yellow + "Make sure your domain & api token are valid")
+        print(fg.blue + " ↳ " + fg.yellow + "exiting")
+        exit()
+    
+    else:
+        print()
+
+    for record in all_records:
+
+        if record["type"] == "A":
+
+            print(fg.blue + " ↳ " + fg.green + record["name"] + fg.blue + " → " + fg.green + record["data"] + fg.blue + " (A)" + fg.rs)
+            valid_records.append(record)
+
+        else:
+
+            print(fg.yellow + " ↳ " + record["name"] + " → " + record["data"] + " (" + record["type"] + ")" + fg.rs)
+
+    if not valid_records:
+
+        print(fg.yellow + "🏃🏻‍♂️ No valid records found, exiting")
+        exit()
 
     sanitized_subdomains = SUBDOMAINS.replace(" ", "")
     subdomain_list = sanitized_subdomains.split(',') 
@@ -140,15 +165,16 @@ def main():
 
     # Update
 
-    print(fg.blue + "📖 Updating records for " + fg.green + DOMAIN + fg.rs)
+    print(fg.blue + "📝 Updating records for " + fg.green + DOMAIN + fg.rs)
     
     for name in subdomain_list:
 
-        print(fg.blue + "👀 Checking subdomain " + fg.green + name + fg.rs, end="")
+        print(fg.blue + " ↳ " + fg.green + name + fg.rs, end="")
 
-        record = get_subdomain_record(name)
+        record = find_subdomain_record_in_list(name, valid_records)
 
         if not record:
+
             print(fg.blue + " ... " + fg.yellow + "not found, skipping" + fg.rs)
             continue
 
@@ -157,58 +183,37 @@ def main():
         record_ip = record["data"]
 
         if not record_id or not record_type or not record_ip:
-            print(fg.blue + " ... " + fg.red + "invalid record, skipping" + fg.rs)
+
+            print(fg.blue + " ... " + fg.yellow + "invalid record, skipping" + fg.rs)
             continue
 
         if record_type != "A":
+
             print(fg.blue + " ... " + fg.yellow + "not an A record, skipping" + fg.rs)
             continue
 
         if record_ip != ip:
 
-            print(fg.blue + " ... " + fg.yellow + "update required" + fg.rs)
-            print(fg.blue + "🚀 Updating subdomain " + fg.green + name + fg.blue + " ... " + fg.yellow + record_ip + fg.blue + " → " + fg.yellow + ip + fg.rs, end="")
+            print(fg.blue + " ... " + fg.yellow + record_ip + fg.blue + " → " + fg.green + ip + fg.rs, end="")
 
-            if not args.dry:
+            if is_dry_run:
+
+                print(fg.blue + " ... " + fg.yellow + "dry run, skipping" + fg.rs)
+                
+            else:
 
                 res = session.put(records_url + record_id, json={"data": ip})
 
                 if res.ok:
-                    print(fg.blue + " ... " + fg.green + "done 🎉" + fg.rs)
+                    print(fg.blue + " ... " + fg.green + "success 🎉" + fg.rs)
                 else:
                     print(fg.blue + " ... " + fg.red + "failed, " + res.text + fg.rs)
 
-            else:
-
-                print(fg.blue + " ... " + fg.yellow + "dry run, skipping" + fg.rs)
-
         else:
-            print(fg.blue + " ... " + fg.green + "up to date 🎉" + fg.rs)
 
-    # print("Updating domain \"" + domain + "\" with IP address: " + ip_address)
-    # print("Subdomains: " + ','.join(subdomain_names))
+            print(fg.blue + " ... " + fg.yellow + "already up to date, skipping" + fg.rs)
 
-    # for name in subdomain_names:
-
-    #     record = get_subdomain_record(name)
-
-    #     if not record:
-    #         print("Failed to get record for subdomain: " + name)
-    #         continue
-
-    #     record_id = record['id']
-    #     subdomain_ip_address = record['data']
-
-    #     if ip == subdomain_ip_address:
-    #         print("Subdomain record does not need updating")
-    #     else:
-
-    #         res = session.put(records_url + record_id, json={'data': ip})
-            
-    #         if res.ok:
-    #             print("Subdomain IP address updated to: " + ip)
-    #         else:
-    #             print("Failed to update subdomain IP address: " + res.text)
+    print(fg.blue + "✅ Done" + fg.rs)
 
 
 if __name__ == '__main__':

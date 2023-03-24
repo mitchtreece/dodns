@@ -1,7 +1,22 @@
 FROM python:3-alpine
 MAINTAINER Mitch Treece <mitchtreece@me.com>
+
+# Setup Directories
+
 RUN mkdir /app
-COPY . /app/
+COPY init.sh /app/
+COPY dodns.py /app/
+COPY requirements.txt /app/
 WORKDIR /app
-RUN pip3 install requirements.txt
-ENTRYPOINT ["python", "/app/dodns.py"]
+
+# Permissions
+
+RUN chmod +x init.sh
+
+# Install Dependencies
+
+RUN pip3 install -r requirements.txt
+
+# Run
+
+ENTRYPOINT ["./init.sh"]
