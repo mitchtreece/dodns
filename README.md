@@ -9,9 +9,9 @@ DigitalOcean DNS update script. Written in Python, bundled with Docker 😎
 ```
 $ docker pull ghcr.io/mitchtreece/dodns
 $ docker run -d --name dodns \
-    -e DO_API_TOKEN="your_api_token" \
-    -e DO_DOMAIN="yourdomain.com" \
-    -e DO_SUBDOMAINS="your,subdomain,list" \
+    -e DO_API_TOKEN=your_api_token \
+    -e DO_DOMAIN=yourdomain.com \
+    -e DO_SUBDOMAINS=your,subdomain,list \
     mitchtreece/dodns
 ```
 
@@ -22,9 +22,9 @@ dodns:
     container_name: dodns-yourdomain.com
     image: ghcr.io/mitchtreece/dodns
     environment:
-        - DO_API_TOKEN="your_api_token"
-        - DO_DOMAIN="yourdomain.com"
-        - DO_SUBDOMAINS="your,subdomain,list"
+        - DO_API_TOKEN=your_api_token
+        - DO_DOMAIN=yourdomain.com
+        - DO_SUBDOMAINS=your,subdomain,list
 ```
 
 ## Variables
