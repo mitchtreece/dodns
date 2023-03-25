@@ -4,6 +4,7 @@ import os
 import dotenv
 import requests
 
+from datetime import datetime
 from argparse import ArgumentParser
 from sty import fg, bg, ef, rs
 
@@ -31,6 +32,10 @@ session = requests.Session()
 # Dry run
 
 is_dry_run = (args.dry or int(DRY_RUN) > 0)
+
+# Time
+
+now = datetime.now()
 
 # Functions
 
@@ -104,14 +109,20 @@ def main():
     print(fg.yellow + "================================" + fg.rs)
     print()
 
-    if is_dry_run:
-        print(fg.yellow + "🌵 Running dry" + fg.rs)
-
     # Request session headers
 
     session.headers = {
         "Authorization": "Bearer " + TOKEN
     }
+
+    # Dry run
+
+    if is_dry_run:
+        print(fg.yellow + "🌵 Running dry" + fg.rs)
+
+    # Timestamp
+
+    print(fg.yellow + "TIMESTAMP" + fg.rs)
 
     # Get wan ip address
 
